@@ -1,0 +1,119 @@
+public with sharing class NewWorkOrderEmailSend {
+    
+   
+        @AuraEnabled
+    public static void sendFenceInventoryEmailToCurrentUser(Id recordId, String emailAddress, Boolean isExternal) {
+         String targetEmail;
+
+        if (isExternal && String.isNotBlank(emailAddress)) {
+            targetEmail = emailAddress;
+        } else {
+            targetEmail = 'trubini@merfantz.in';//[SELECT Email FROM User WHERE Id = :UserInfo.getUserId()].Email;
+        }
+
+        if (String.isBlank(targetEmail)) {
+            throw new AuraHandledException('No valid email found to send notification.');
+        }
+
+        // Query the Fence Inventory info
+        Fence_Inventory__c inv = [SELECT Name, Appointment_Window__c,Service_Required_On__c, Job_Description__c FROM Fence_Inventory__c WHERE Id = :recordId];
+        String htmlBody = ''
+            + 'Hello,<br/><br/>'
+            + 'Thank you for submitting a new Fence Inventory request. Here’s a summary of your order:<br/><br/>'
+            + '<b>Order Summary:</b><br/>'
+            + '<ul>'
+            + '<li><strong>Name:</strong> ' + inv.Name + '</li>'
+            + '<li><strong>Job Description:</strong> ' + inv.Job_Description__c + '</li>'
+            + '<li><strong>Service Date:</strong> ' + String.valueOf(inv.Service_Required_On__c) + '</li>'
+            + '<li><strong>Appointment Window:</strong> ' + inv.Appointment_Window__c + '</li>'
+            + '</ul>'
+            + '<br/><i>Note: Your order has not been approved yet. You’ll receive another email once Operations has approved it.</i><br/><br/>'
+            + 'Regards,<br/>Fence Operations Team';
+
+        // Compose email
+        Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+        mail.setToAddresses(new List<String>{ targetEmail });
+        mail.setSubject('Fence Inventory Record Created');
+        mail.setHtmlBody(htmlBody);
+
+        Messaging.sendEmail(new List<Messaging.Email> { mail });
+    }
+    
+     @AuraEnabled
+    public static void sendToiletInventoryEmailToCurrentUser(Id recordId, String emailAddress, Boolean isExternal) {
+         String targetEmail;
+
+        if (isExternal && String.isNotBlank(emailAddress)) {
+            targetEmail = emailAddress;
+        } else {
+            targetEmail = 'trubini@merfantz.in';//[SELECT Email FROM User WHERE Id = :UserInfo.getUserId()].Email;
+        }
+
+        if (String.isBlank(targetEmail)) {
+            throw new AuraHandledException('No valid email found to send notification.');
+        }
+        
+
+        // Query the Fence Inventory info
+        Toilet_Inventory__c inv = [SELECT Name, Service_Required_On_T__c, Status_T__c,Appointment_Window__c FROM Toilet_Inventory__c WHERE Id = :recordId];
+        String htmlBody = ''
+            + 'Hello,<br/><br/>'
+            + 'Thank you for submitting a new Toilet Inventory request. Here’s a summary of your order:<br/><br/>'
+            + '<b>Order Summary:</b><br/>'
+            + '<ul>'
+            + '<li><strong>Name:</strong> ' + inv.Name + '</li>'
+            + '<li><strong>Job Description:</strong> ' + inv.Status_T__c + '</li>'
+            + '<li><strong>Service Date:</strong> ' + String.valueOf(inv.Service_Required_On_T__c) + '</li>'
+            + '<li><strong>Appointment Window:</strong> ' + inv.Appointment_Window__c + '</li>'
+            + '</ul>'
+            + '<br/><i>Note: Your order has not been approved yet. You’ll receive another email once Operations has approved it.</i><br/><br/>'
+            + 'Regards,<br/>Fence Operations Team';
+
+        // Compose email
+        Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+        mail.setToAddresses(new List<String>{ targetEmail });
+        mail.setSubject('Toilet Inventory Record Created');
+        mail.setHtmlBody(htmlBody);
+
+        Messaging.sendEmail(new List<Messaging.Email> { mail });
+    }
+    
+    @AuraEnabled
+    public static void sendWasteInventoryEmailToCurrentUser(Id recordId, String emailAddress, Boolean isExternal) {
+         String targetEmail;
+
+        if (isExternal && String.isNotBlank(emailAddress)) {
+            targetEmail = emailAddress;
+        } else {
+            targetEmail = 'trubini@merfantz.in';//[SELECT Email FROM User WHERE Id = :UserInfo.getUserId()].Email;
+        }
+
+        if (String.isBlank(targetEmail)) {
+            throw new AuraHandledException('No valid email found to send notification.');
+        }
+
+        // Query the Fence Inventory info
+        Waste_Disposal__c inv = [SELECT Name, Service_Req_on__c, Job_Description__c,Appointment_Window__c FROM Waste_Disposal__c WHERE Id = :recordId];
+        
+        String htmlBody = ''
+            + 'Hello,<br/><br/>'
+            + 'Thank you for submitting a new Waste disposal Inventory request. Here’s a summary of your order:<br/><br/>'
+            + '<b>Order Summary:</b><br/>'
+            + '<ul>'
+            + '<li><strong>Name:</strong> ' + inv.Name + '</li>'
+            + '<li><strong>Job Description:</strong> ' + inv.Job_Description__c + '</li>'
+            + '<li><strong>Service Date:</strong> ' + String.valueOf(inv.Service_Req_on__c) + '</li>'
+            + '<li><strong>Appointment Window:</strong> ' + inv.Appointment_Window__c + '</li>'
+            + '</ul>'
+            + '<br/><i>Note: Your order has not been approved yet. You’ll receive another email once Operations has approved it.</i><br/><br/>'
+            + 'Regards,<br/>Fence Operations Team';
+
+        // Compose email
+        Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+        mail.setToAddresses(new List<String>{ targetEmail });
+        mail.setSubject('Waste Disposal Inventory Record Created');
+        mail.setHtmlBody(htmlBody);
+
+        Messaging.sendEmail(new List<Messaging.Email> { mail });
+    }
+}
