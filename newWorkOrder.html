@@ -1,0 +1,554 @@
+<template>
+
+    <template if:true={showToast}>
+        <div class="slds-notify_container">
+            <div class="slds-notify slds-notify_toast {toastClass}" role="alert">
+                <span class="slds-assistive-text">{toastType}</span>
+                <span class="slds-icon_container slds-m-right_small">
+                    <lightning-icon icon-name={toastIcon} alternative-text={toastType} size="small"></lightning-icon>
+                </span>
+                <div class="slds-toast__content">
+                    <h2 class="slds-text-heading_small" style="color:white" lwc:dom="manual" ref="toastContent"></h2>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template if:true={isExternalUser}>
+    <div class="slds-p-around_medium">
+        <div class="container">
+            <h1 class="slds-text-heading_large" style="text-align: center;">Account Information</h1>
+            <p class="subtitle" style="text-align: center;">Please enter your Register Email</p>
+            <div class="slds-form">
+                <div class="slds-form-element form-group full-width">
+                    <label class="slds-form-element__label required" for="email">Email:</label>
+                    <div class="slds-form-element__control">
+                        <lightning-input type="email" id="email" name="email" value={emailAddress}
+                            placeholder="Enter email address..." onchange={handleEmailChange} 
+                         class="search-input">
+                        </lightning-input>
+                    </div>
+                </div>
+                <template if:true={showAccountSelection}>
+                    
+                            <div class="slds-form-element form-group full-width">
+                                <label class="slds-form-element__label required" for="account">Account:</label>
+                                <div class="slds-form-element__control">
+                                    <lightning-combobox
+                                        name="account"
+                                        label="Select Account"
+                                        placeholder="Select an account"
+                                        options={accountOptionss}
+                                        onchange={handleAccountSelection}>
+                                    </lightning-combobox>
+                                </div>
+                            </div>  
+                </template>
+                <div class="button-group">
+                    <lightning-button variant="brand" label="Submit" onclick={submitAccountDetails}
+                        class="btn btn-save"></lightning-button>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+    <template if:true={frontPage}>
+        <div class="slds-p-around_medium">
+            <div class="container">
+                <h1 class="slds-text-heading_large" style="text-align: center;">Welcome to Fenceline</h1>
+                <p class="subtitle" style="text-align: center;">Submit a new work order</p>
+                <div class="slds-form">
+
+                    <template if:false={externalUser}>
+                        <div class="slds-form-element form-group full-width">
+                            <label class="slds-form-element__label required" for="project">Account:</label>
+                            <div class="slds-form-element__control search-container">
+                                <div class="search-input-wrapper">
+                                    <lightning-input type="search" id="account" name="account" value={accountSearchTerm}
+                                        placeholder="Type to search accounts..." onchange={handleAccountSearch} onblur={handleAccountBlur}
+                                        class="search-input"></lightning-input>
+
+                                    <template if:true={showAccountSuggestions}>
+                                        <div class="search-results-dropdownAcc">
+                                            <ul class="search-results-list">
+                                                <template for:each={filteredAccountOptions} for:item="account">
+                                                    <li key={account.value} class="search-result-item"
+                                                        data-value={account.value} onclick={selectAccount}>
+                                                        <div class="search-result-content">
+                                                            <span>{account.label}</span>
+                                                        </div>
+                                                    </li>
+                                                </template>
+                                            </ul>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div class="slds-form-element form-group full-width">
+                        <label class="slds-form-element__label required" for="project">Project:</label>
+                        <div class="slds-form-element__control search-container">
+                            <div class="search-input-wrapper">
+                                <lightning-input type="search" id="project" name="project" value={projectSearchTerm}
+                                    placeholder="Type to search projects..." onchange={handleProjectSearch}
+                                    class="search-input"></lightning-input>
+                                <template if:true={showProjectSuggestions}>
+                                    <div class="search-results-dropdown">
+                                        <ul class="search-results-list">
+                                            <template for:each={filteredProjectOptions} for:item="project">
+                                                <li key={project.value} class="search-result-item"
+                                                    data-value={project.value} onclick={selectProject}>
+                                                    <div class="search-result-content">
+                                                        <span>{project.label}</span>
+                                                    </div>
+                                                </li>
+                                            </template>
+                                        </ul>
+                                    </div>
+                                </template>
+                            </div>
+                            <template if:false={externalUser}>
+                                
+                                <lightning-button variant="neutral" label="New Project" onclick={handleNewProject}
+                                    class="btn btn-cancel new-project-btn"></lightning-button>
+                            </template>
+                        </div>
+                    </div>
+                   <div class="slds-form-element form-group full-width">
+                        <label class="slds-form-element__label required" for="work_order">Select your product:</label>
+                        <div class="slds-form-element__control">
+                            <lightning-combobox id="work_order" name="work_order" value={workOrder}
+                                options={workOrderOptions} placeholder="Select Work Order..."
+                                onchange={handleWorkOrderChange}
+                                disabled={showProjectSuggestions}></lightning-combobox>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <template if:true={externalUser}>
+                            <lightning-button variant="neutral" label="Back" onclick={backHome}
+                                class="btn btn-cancel"></lightning-button>
+                        </template>
+                        <lightning-button variant="brand" label="Next" onclick={createWorkOrderType}
+                            class="btn btn-save"></lightning-button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </template>
+
+    <template if:true={createProjectPage}>
+        <div class="slds-p-around_medium">
+            <div class="container">
+                <h1 class="slds-text-heading_large">Create New Project</h1>
+                <p class="subtitle">Set up your construction project with all the essential details</p>
+                <div class="slds-form">
+                    <div class="slds-grid slds-wrap slds-gutters form-grid">
+                        <div class="slds-col form-group">
+                            <lightning-input
+                                type="search"
+                                name="General_Contractor__c"
+                                label="General Contractor"
+                                value={generalContractorSearchTerm}
+                                placeholder="Type to search accounts..."
+                                onchange={handleGeneralContractorSearch}
+                                class="search-input"
+                                required>
+                            </lightning-input>
+
+                            <template if:true={showGeneralContractorSuggestions}>
+                                <div class="search-results-dropdown">
+                                    <ul class="search-results-list">
+                                        <template for:each={filteredGeneralContractorOptions} for:item="account">
+                                            <li key={account.value}
+                                                class="search-result-item"
+                                                data-value={account.value}
+                                                onclick={selectGeneralContractor}>
+                                                <div class="search-result-content">
+                                                    <span>{account.label}</span>
+                                                </div>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="slds-col  form-group">
+                            <lightning-combobox 
+                                name="Site_Super__c" 
+                                label="Site Super" 
+                                value={siteSuper}
+                                placeholder="Select Contact..." 
+                                options={contactOptions}
+                                onchange={handleContactChange} required>
+                            </lightning-combobox>
+                        </div>
+                    </div>
+                    <div class="slds-grid slds-gutters form-grid">
+                        <div class="slds-col form-group">
+                            <lightning-input  name="Name" label="Project Name" value={projectName}
+                                placeholder="Enter project name" onchange={handleInputChangeName} required></lightning-input>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-combobox name="AccessContct" label="Access Contact" value={selectedAccessContct}
+                                placeholder="Select Contact..." options={contactOptions} class="lightnigCombo"
+                                onchange={handleAccessContctFence} required></lightning-combobox>
+                        </div>
+                        <!-- Column 2 -->
+                        <div class="slds-col form-group">
+                            <lightning-input type="text" name="Project_Address__c" label="Project Address"
+                                value={projectAddress} placeholder="Enter full address"
+                                onchange={handleInputChangeAddress} required></lightning-input>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-input type="text" name="City__c" label="City" value={city}
+                                placeholder="Enter city" onchange={handleInputChangeCity} required></lightning-input>
+                        </div>
+                    </div>
+                    <h3 class="section-title">Purchase Orders</h3>
+                    <div class="slds-grid slds-gutters po-grid">
+                        <div class="slds-col form-group">
+                            <lightning-input type="text" name="Fence_PO__c" label="PO Req Fence" value={fencePO}
+                                placeholder="Enter PO number" onchange={handleInputChangeFencePO}></lightning-input>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-input type="text" name="Toilet_PO__c" label="PO Req Toilet" value={toiletPO}
+                                placeholder="Enter PO number" onchange={handleInputChangeToiletPO}></lightning-input>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-input type="text" name="Waste_PO__c" label="PO Req Waste" value={wastePO}
+                                placeholder="Enter PO number" onchange={handleInputChangeWastePO}></lightning-input>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <lightning-button variant="neutral" label="Cancel" onclick={handleCancel}
+                            class="btn btn-cancel"></lightning-button>
+                        <lightning-button variant="brand" label="Save Project" onclick={handleSave} class="btn btn-save"
+                            disabled={disableSave}>
+                            <span slot="label" class="save-text">Save Project</span>
+                        </lightning-button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </template>
+
+    <template if:true={showFence}>
+        <div class="slds-p-around_medium">
+            <div class="container">
+                <h1 class="slds-text-heading_large">Create Fence Inventory</h1>
+                <p class="subtitle">Enter details for fence inventory</p>
+                <div class="slds-form">
+
+                    <div class="slds-grid slds-gutters form-grid">
+                        <div class="slds-col form-group">
+                            <lightning-input name="projectName" label="Project Name" required
+                                value={projectLabel}
+                                disabled></lightning-input>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-input type="date" label="Service Required On:" id="service_date"
+                                name="service_date" class="lightnigComboDate" value={serviceDate}
+                                onchange={handleServiceDateChangeFence} required></lightning-input>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-input name="Appointment_Window__c" label="Appointment Window"
+                                value={appointmentWindowFence} placeholder="Enter appointment window"
+                                onchange={handleAppoinementWindowFence} required></lightning-input>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-input name="salesperson" label="Sales Person"
+                                value={salesPersonName}
+                                disabled></lightning-input>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-combobox name="jobDescription" label="Job Description" class="lightnigCombosite"
+                                value={selectedJobDescription} placeholder="Select Job Description..."
+                                options={jobDescriptionOptions} onchange={handleJobDescriptionChange} required>
+                            </lightning-combobox>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-textarea name="Fence_Requirements__c" label="Fence Requirements"
+                                value={FenceRequirementsFence} placeholder="Enter fence requirements"
+                                onchange={handleFenceRequirements} required></lightning-textarea>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-combobox
+                                        name="contact"
+                                        label="Ordered By"
+                                        class="lightnigCombo"
+                                        options={contactOptionswork}
+
+                                        onchange={handleorderedByFence} required>
+                                    </lightning-combobox>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-combobox
+                                        name="contact"
+                                        label="Access Contact"
+                                        placeholder="Select a contact"
+                                        value ={accessContactFence}
+                                        options={contactOptionswork}
+                                        onchange={handleAccessContactFence} required>
+                                    </lightning-combobox>
+                                    <template if:true={showCreateButton}>
+                                        <lightning-button 
+                                            label="Create New Contact" 
+                                            onclick={openModal} 
+                                            class="slds-m-top_small">
+                                        </lightning-button>
+                                    </template>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-textarea name=" installationInstructions" label=" Installation Instructions"
+                                value={installationInstructionsFence} placeholder="Enter Installation instructions"
+                                onchange={handleInstallationInstructionsFence} required></lightning-textarea>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-textarea name="Site_Access_Information__c" label="Site Access Information"
+                                value={siteAccessInfoFence} placeholder="Enter site access details"
+                                onchange={handleSiteAccessInfoFence} required></lightning-textarea>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <lightning-button variant="neutral" label="Cancel" onclick={handleCancel}
+                            class="btn btn-cancel"></lightning-button>
+                        <lightning-button variant="brand" label="Save Inventory" onclick={handleSaveInventory}
+                            class="btn btn-save" disabled={disableSave}></lightning-button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </template>
+    <template if:true={isModalOpen}>
+    <section role="dialog" class="slds-modal slds-fade-in-open">
+        <div class="slds-modal__container">
+            <header class="slds-modal__header">
+                <h2 class="slds-modal__title slds-text-heading_medium">Create New Contact</h2>
+            </header>
+            <div class="slds-modal__content slds-p-around_medium">
+                <div class="slds-form">
+                    <div class="slds-grid slds-wrap slds-gutters">
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning-input label="Name" value={newContact.LastName}
+                                onchange={handleInputChange} data-field="LastName"></lightning-input>
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning-input label="Email" type="email" value={newContact.Email}
+                                onchange={handleInputChange} data-field="Email"></lightning-input>
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning-input label="Phone" value={newContact.Phone}
+                                onchange={handleInputChange} data-field="Phone"></lightning-input>
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning-input label="Home Phone" value={newContact.HomePhone}
+                                onchange={handleInputChange} data-field="HomePhone"></lightning-input>
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning-input label="Assistant Phone" value={newContact.AssistantPhone}
+                                onchange={handleInputChange} data-field="AssistantPhone"></lightning-input>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <footer class="slds-modal__footer">
+                <lightning-button label="Cancel" onclick={closeModal} class="slds-m-right_small"></lightning-button>
+                <lightning-button variant="brand" label="Save" onclick={saveContact}></lightning-button>
+            </footer>
+        </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+</template>
+    <!-- Create Toilet Inventory  -->
+    <template if:true={showToilet}>
+        <div class="slds-p-around_medium">
+            <div class="container">
+                <h1 class="slds-text-heading_large">Create Toilet Inventory</h1>
+                <p class="subtitle">Enter details for toilet inventory</p>
+                <div class="slds-form">
+                    <div class="slds-grid slds-gutters form-grid">
+                        <div class="slds-col form-group">
+                            <lightning-input name="projectName" label="Project Name" required
+                                value={projectLabel}
+                                disabled></lightning-input>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-input type="date" label="Service Required On:" name="service_date"
+                                class="lightnigComboDate" value={serviceDate} onchange={handleServiceDateChangeToilet} required>
+                            </lightning-input>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-input name="Appointment_Window__c" label="Appointment Window"
+                                value={appointmentWindowToilet} placeholder="Enter appointment window"
+                                onchange={handleAppointmentWindowToilet} required></lightning-input>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-input name="salesperson" label="Sales Person"
+                                value={salesPersonName}
+                                disabled></lightning-input>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-combobox name="statusT" label="Job Description" class="lightnigCombosite"
+                                value={selectedStatusT} placeholder="Select Job Description..." options={statusTOptions}
+                                onchange={handleStatusTChange} required></lightning-combobox>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-input type="number" name="NoOfToilets" label="# of Toilets" value={numOfToilet}
+                                placeholder="Enter number of toilets" onchange={handleNumOfToilet} min="0" max="999"
+                                message-when-range-overflow="Maximum 3 digits allowed" required></lightning-input>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-combobox
+                                        name="OrderedBy"
+                                        label="Ordered By"
+                                        value={orderByToilet}
+                                        placeholder="Enter ordered by"
+                                        class="lightnigCombo"
+                                        options={contactOptionswork}
+                                        onchange={handleOrderByToilet} required>
+                                    </lightning-combobox>
+                        </div>
+                        
+                        <div class="slds-col form-group">
+                            <lightning-input type="text" name="UnitTypes" label="Unit Type" value={unitTypeToilet}
+                                placeholder="Enter unit types" onchange={handleUnitTypeToilet} required></lightning-input>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-combobox
+                                        name="Access_Contact__c"
+                                        label="Access Contact"
+                                        value={accessContactToilet}
+                                       placeholder="Enter contact"
+                                        class="lightnigCombo2"
+                                        options={contactOptionswork}
+                                        onchange={handleAccessContactToilet} required>
+                                    </lightning-combobox>
+                                    <template if:true={showCreateButton}>
+                                        <lightning-button 
+                                            label="Create New Contact" 
+                                            onclick={openModal} 
+                                            class="slds-m-top_small">
+                                        </lightning-button>
+                                    </template>
+                        </div>
+                        
+                        <div class="slds-col form-group">
+                            <lightning-textarea name=" installationInstructions" label=" Installation Instructions"
+                                value={installationInstructionsToilet} placeholder="Enter Installation instructions"
+                                onchange={handleInstallationInstructionsToilet} required></lightning-textarea>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-textarea name="Site Access Information" label="Site Access Information"
+                                value={siteAccessWindowToilet} placeholder="Enter site access details"
+                                onchange={handleSiteAccessWindowToilet} required></lightning-textarea>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <lightning-button variant="neutral" label="Cancel" onclick={handleCancel}
+                            class="btn btn-cancel"></lightning-button>
+                        <lightning-button variant="brand" label="Save Inventory" onclick={handleSaveToilet}
+                            class="btn btn-save" disabled={disableSave}></lightning-button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </template>
+
+    <template if:true={showWasteDisposal}>
+        <div class="slds-p-around_medium">
+            <div class="container">
+                <h1 class="slds-text-heading_large">Create Waste Disposal Inventory</h1>
+                <p class="subtitle">Enter details for waste disposal inventory</p>
+                <div class="slds-form">
+                    <div class="slds-grid slds-gutters form-grid">
+                        <div class="slds-col form-group">
+                            <lightning-input name="projectName" label="Project Name" required
+                                value={projectLabel}
+                                disabled></lightning-input>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-input type="date" label="Service Required On:" name="service_date"
+                                class="lightnigComboDate" value={serviceDate} onchange={handleServiceDateChangeWaste} required>
+                            </lightning-input>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-input name="Appointment_Window__c" label="Appointment Window"
+                                value={appointmentWindowWaste} placeholder="Enter appointment window"
+                                onchange={handleAppointmentWindowWaste} required></lightning-input>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-input name="salesperson" label="Sales Person"
+                                value={salesPersonName}
+                                disabled></lightning-input>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-combobox name="statusT" label="Job Description" class="lightnigCombosite"
+                                value={jobDescriptionWaste} placeholder="Select Job Description..."
+                                options={jobDescriptionOptionsWaste} onchange={handlejobDescriptionWaste} required>
+                            </lightning-combobox>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-combobox name="binSize" label="Bin Size" class="lightnigCombosite" value={binSize}
+                                placeholder="Select Bin Size..." options={binSizeOptions} onchange={handlebinSize} required>
+                            </lightning-combobox>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-combobox name="commodity" label="Commodity" class="lightnigCombo"
+                                value={commodity} placeholder="Select Commodity..." options={commodityOptions}
+                                onchange={handlecommodity} required></lightning-combobox>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-combobox
+                                        name="OrderedBy"
+                                        label="Ordered By"
+                                        value={orderedByWaste}
+                                        placeholder="Enter ordered by"
+                                       
+                                        options={contactOptionswork}
+                                        onchange={handleOrderedByWaste} required>
+                                    </lightning-combobox>
+                        </div>
+
+                        <div class="slds-col form-group">
+                            <lightning-combobox type="text" name="AccessContact" label="Access Contact"
+                                value={selectedAccessContctWaste} placeholder="Enter contact" 
+                                options={contactOptionswork}
+                                onchange={handleselectedAccessContctWaste} required></lightning-combobox>
+                                <template if:true={showCreateButton}>
+                                        <lightning-button 
+                                            label="Create New Contact" 
+                                            onclick={openModal} 
+                                            class="slds-m-top_small">
+                                        </lightning-button>
+                                    </template>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-textarea name=" installationInstructions" label=" Installation Instructions"
+                                value={installationInstructionsWaste} placeholder="Enter Installation instructions"
+                                onchange={handleInstallationInstructionsWaste} required></lightning-textarea>
+                        </div>
+                        <div class="slds-col form-group">
+                            <lightning-textarea name="Site Access Information" label="Site Access Information"
+                                value={siteAccessWaste} placeholder="Enter site access details"
+                                onchange={handleSiteAccessWaste} required></lightning-textarea>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <lightning-button variant="neutral" label="Cancel" onclick={handleCancel}
+                            class="btn btn-cancel"></lightning-button>
+                        <lightning-button variant="brand" label="Save Inventory" onclick={handleSaveWateDisposal}
+                            class="btn btn-save" disabled={disableSave}></lightning-button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </template>
+</template>

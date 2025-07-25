@@ -1,0 +1,306 @@
+/*:host {
+    display: block;
+    max-width: 600px;
+    margin: 0 auto;
+}*/
+
+:host {
+    display: block;
+    max-width: 700px;
+    margin: 0 auto;
+}
+.lightnigCombo{
+    z-index: 2;
+}
+.lightnigCombosite{
+    z-index: 3;
+}
+.lightnigCombo2{
+    z-index:1;
+}
+
+.container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    /*max-width: 800px;*/
+    width: 100%;
+    padding: 40px;  
+    animation: slideUp 0.6s ease-out;
+}
+.toast.slds-notify_toast {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 9999;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.slds-text-heading_large {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1a202c;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+    color: #64748b;
+    font-size: 1.1rem;
+    margin-bottom: 32px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.po-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 32px;
+}
+
+.form-group {
+    display: flex;
+    margin-top: 10px;
+    flex-direction: column;
+    position: relative; /* Added for dropdown positioning */
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.slds-form-element__label {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+.search-results-dropdownAcc{
+    
+    top: 100%;
+    left: 0;
+    z-index: 9999; /* UNCOMMENT AND SET HIGH VALUE - this was your main issue */
+    width: 100%;
+    max-height: 100px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #d8dde6;
+    border-top: none;
+    box-shadow: 0 8px 25px -8px rgba(0, 0, 0, 0.3);
+    border-radius: 0 0 12px 12px;
+    
+}
+
+lightning-input, lightning-combobox, lightning-textarea {
+    --slds-c-input-text-color: #374151;
+    --slds-c-input-color-background: white;
+    --slds-c-input-border-color: #e2e8f0;
+    --slds-c-input-radius-border: 12px;
+    --slds-c-input-height: 48px;
+    transition: all 0.3s ease;
+    position: relative; /* Added for proper stacking context */
+}
+
+lightning-input:hover, lightning-combobox:hover, lightning-textarea:hover {
+    --slds-c-input-border-color: #cbd5e0;
+}
+
+lightning-input:focus-within, lightning-textarea:focus-within {
+    --slds-c-input-border-color: #667eea;
+    /*box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);*/
+    transform: translateY(-2px);
+    z-index: 10; /* Ensure focused input is above other elements */
+}
+
+.section-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #1a202c;
+    margin: 32px 0 16px 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.button-group {
+    display: flex;
+    justify-content: flex-end;
+    gap:12px;
+    margin-top: 32px;
+}
+
+.btn {
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none !important;
+}
+
+
+
+.btn-cancel {
+    --slds-c-button-neutral-color-background: #c5e0fa;
+    --slds-c-button-neutral-text-color: #475569;
+    --slds-c-button-neutral-color-border: #e2e8f0;
+    border: none !important;
+}
+
+
+.btn-save {
+    --slds-c-button-brand-color-background: #764ba2;
+    --slds-c-button-brand-text-color: white;
+    --slds-c-button-brand-color-border: #764ba2;
+    border: none !important;
+}
+
+.btn-save:hover {
+    
+    border: none !important;
+}
+
+.slds-notify_container.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    color: white;
+    font-weight: 500;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.3);
+}
+
+.slds-notify_container.toast.success {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.slds-notify_container.toast.error {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.slds-notify_container.toast.show {
+    transform: translateX(0);
+}
+
+.required::after {
+    content: ' *';
+    color: #ef4444;
+}
+
+.search-container {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    width: 100%;
+    position: relative; /* Added for dropdown positioning */
+    
+}
+
+.search-input-wrapper {
+    position: relative;
+    flex: 1;
+    z-index: 100; /* Ensure wrapper is above other elements */
+}
+
+.search-input {
+    width: 100%;
+    position: relative;
+    z-index: 100; /* Ensure input is above other elements */
+}
+
+.search-results-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 9999; /* UNCOMMENT AND SET HIGH VALUE - this was your main issue */
+    width: 100%;
+    max-height: 100px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #d8dde6;
+    border-top: none;
+    box-shadow: 0 8px 25px -8px rgba(0, 0, 0, 0.3);
+    border-radius: 0 0 12px 12px;
+}
+
+
+.search-results-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.search-result-item {
+    padding: 12px 16px; /* Increased padding for better touch targets */
+    cursor: pointer;
+    border-bottom: 1px solid #f1f5f9; /* Subtle separators */
+    transition: background-color 0.2s ease;
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+
+
+.search-result-content {
+    display: flex;
+    align-items: center;
+    padding: 4px 0;
+}
+
+.new-project-btn {
+    white-space: nowrap;
+    border-radius: 12px;
+    font-size: 1rem;
+    z-index: 1; /* Ensure button doesn't interfere with dropdown */
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 24px;
+        margin: 10px;
+    }
+    
+    .slds-text-heading_large {
+        font-size: 2rem;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .po-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+    
+    .search-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
