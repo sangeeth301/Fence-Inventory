@@ -1,0 +1,393 @@
+public without sharing class NewWorkOrder {
+    
+    @AuraEnabled(cacheable=true)
+    public static Map<String, Object> getProjects(String email, Boolean isExternal, String accountId) {
+        
+        
+        // External user flow
+        if (String.isNotBlank(accountId)) {
+            // If accountId is provided, return projects for that specific account
+            return new Map<String, Object>{
+                'projects' => [SELECT Id, Name FROM Projects__c 
+                              WHERE General_Contractor__c = :accountId 
+                              ORDER BY Name],
+                'accounts' => null
+            };
+        }
+        else if (String.isNotBlank(email)) {
+            // Check for contacts with this email
+            List<Contact> contacts = [SELECT AccountId, Account.Name 
+                                     FROM Contact 
+                                     WHERE Email = :email 
+                                     AND AccountId != null];
+            
+            if (!contacts.isEmpty()) {
+                Set<Id> accountIds = new Set<Id>();
+                for (Contact c : contacts) {
+                    accountIds.add(c.AccountId);
+                }
+                
+                if (accountIds.size() > 1) {
+                    // Multiple accounts found - return them for selection
+                    List<Account> accounts = [SELECT Id, Name 
+                                            FROM Account 
+                                            WHERE Id IN :accountIds 
+                                            ORDER BY Name];
+                    
+                    return new Map<String, Object>{
+                        'projects' => null,
+                        'accounts' => accounts
+                    };
+                }
+                else if (accountIds.size() == 1) {
+                    // Single account found - return its projects
+                    return new Map<String, Object>{
+                        'projects' => [SELECT Id, Name FROM Projects__c 
+                                      WHERE General_Contractor__c IN :accountIds 
+                                      ORDER BY Name],
+                        'accounts' => null
+                    };
+                }
+            }
+        }
+        
+        // Default return if no matches found
+        return new Map<String, Object>{
+            'projects' => new List<Projects__c>(),
+            'accounts' => null
+        };
+    }
+    
+    // Optional: Add a method to get account details if needed
+    @AuraEnabled(cacheable=true)
+    public static List<Account> getAccountsForEmail(String email) {
+        if (String.isBlank(email)) {
+            return new List<Account>();
+        }
+        
+        List<Contact> contacts = [SELECT AccountId 
+                                FROM Contact 
+                                WHERE Email = :email 
+                                AND AccountId != null];
+        
+        Set<Id> accountIds = new Set<Id>();
+        for (Contact c : contacts) {
+            accountIds.add(c.AccountId);
+        }
+        
+        return [SELECT Id, Name FROM Account WHERE Id IN :accountIds ORDER BY Name];
+    }
+
+    
+  
+
+    
+    @AuraEnabled(cacheable=true)
+    public static List<Account> getAccounts() {
+        return [SELECT Id, Name FROM Account ORDER BY Name];
+    }
+
+    @AuraEnabled(cacheable=true)
+    public static List<Contact> getContacts(Id accountId) {
+        if (accountId == null) {
+            return new List<Contact>();
+        }
+        return [
+            SELECT Id, Name
+            FROM Contact
+            WHERE AccountId = :accountId
+            ORDER BY Name
+            LIMIT 100
+        ];
+    }
+
+    
+     @AuraEnabled(cacheable=true)
+    public static Boolean isExternalUser() {
+        // getUserType() will return things like 'Standard', 'Customer Community', 'Partner', etc.
+        return UserInfo.getUserType() != 'Standard';
+    }
+
+    @AuraEnabled
+    public static Id createProject(Map<String, Object> projectData) {
+        Projects__c project = new Projects__c();
+        project.General_Contractor__c = (Id)projectData.get('General_Contractor__c');
+        project.Site_Super__c = (Id)projectData.get('Site_Super__c');
+        project.Name = (String)projectData.get('Name');
+        project.Project_Address__c = (String)projectData.get('Project_Address__c');
+        project.City__c = (String)projectData.get('City__c');
+        project.Fence_PO__c = (String)projectData.get('Fence_PO__c');
+        project.Toilet_PO__c = (String)projectData.get('Toilet_PO__c');
+        project.Waste_PO__c = (String)projectData.get('Waste_PO__c');
+        project.Access_Contact__c =(Id)projectData.get('Access_Contact__c');
+        
+        insert project;
+        return project.Id;
+    }
+    
+    
+   @AuraEnabled
+    public static User getCurrentUser() {
+        return [
+            SELECT Id, Name
+            FROM User
+            WHERE Id = :UserInfo.getUserId()
+            LIMIT 1
+        ];
+    }
+    
+//============================================================================  Fence  =================================================//
+    
+  @AuraEnabled(cacheable=true)
+    public static Map<String, List<String>> getPicklistValuesFence() {
+        Map<String, List<String>> result = new Map<String, List<String>>();
+
+        List<String> enteredBy = new List<String>();
+        for (Schema.PicklistEntry entry : Fence_Inventory__c.Entered_By__c.getDescribe().getPicklistValues()) {
+            if (entry.isActive()) enteredBy.add(entry.getLabel());
+        }
+        result.put('Entered_By__c', enteredBy);
+
+        List<String> jobDescription = new List<String>();
+        for (Schema.PicklistEntry entry : Fence_Inventory__c.Job_Description__c.getDescribe().getPicklistValues()) {
+            if (entry.isActive()) jobDescription.add(entry.getLabel());
+        }
+        result.put('Job_Description__c', jobDescription);
+
+        return result;
+    }
+    
+   public class FenceInventoryResult {
+    @AuraEnabled public Id recordId;
+    @AuraEnabled public String workOrderNumber;
+    
+    public FenceInventoryResult(Id recordId, String workOrderNumber) {
+        this.recordId = recordId;
+        this.workOrderNumber = workOrderNumber;
+    }
+}
+
+    @AuraEnabled
+    public static FenceInventoryResult createFenceInventory(
+        String enteredBy, Id salesPerson, String jobDescription, Id projectId,
+        Date serviceDate, String appointmentWindow, String FenceRequirements,
+        Id orderBy, String installationInstructions, String SiteAccessinfo, String APPOrderstatus, String Externalemail,Id accessContact
+    ) {
+        Fence_Inventory__c record = new Fence_Inventory__c();
+        record.Entered_By__c = enteredBy;
+        record.Job_Description__c = jobDescription;
+        record.Project__c = projectId;
+        record.Service_Required_On__c = serviceDate;
+        record.Appointment_Window__c = appointmentWindow;
+        record.Fence_Requirements__c = FenceRequirements;
+        record.Ordered_By__c = orderBy;
+        record.APP_Order_status__c = APPOrderstatus;
+        record.Site_Access_Information__c = SiteAccessinfo;
+        record.Install_instr_Fi__c = installationInstructions;
+        record.Sales_Person__c = salesPerson;
+        record.External_User__c = Externalemail;
+        record.Access_Contact__c =accessContact;
+        
+        insert record;
+    
+        // Query the Name field after insert
+        record = [SELECT Id, Name FROM Fence_Inventory__c WHERE Id = :record.Id];
+    
+        return new FenceInventoryResult(record.Id, record.Name);
+    }
+
+
+
+    
+    //====================================================================Toilet Inventory==============================================
+    
+    public class ToiletInventoryResult {
+        @AuraEnabled public Id recordId;
+        @AuraEnabled public String workOrderNumber;
+    
+        public ToiletInventoryResult(Id recordId, String workOrderNumber) {
+            this.recordId = recordId;
+            this.workOrderNumber = workOrderNumber;
+        }
+    }
+
+   @AuraEnabled
+    public static ToiletInventoryResult createToiletInventory(
+        String enteredBy, String statusT, String installationInstructions,
+        Id projectId, Date serviceDate, Integer noOfToilet, String appointmentWindow,
+        Id orderBy, Id accessContact, String siteAccessinfo, String unitType, String APPOrderstatus,String Externalemail
+    ) {
+        Toilet_Inventory__c record = new Toilet_Inventory__c();
+        record.Entered_By__c = enteredBy;
+        record.Status_T__c = statusT;
+        record.Project__c = projectId;
+        record.Service_Required_On_T__c = serviceDate;
+        record.Appointment_Window__c = appointmentWindow;
+        record.Ordered_By__c = orderBy;
+        record.Number_of_Toilets__c = noOfToilet;
+        record.Access_Contact__c = accessContact;
+        record.Unit_Type__c = unitType;
+        record.APP_Order_status__c = APPOrderstatus;
+        record.Site_Access_Information__c = siteAccessinfo;
+        record.Installation_Instructions__c = installationInstructions;
+        record.External_User__c = Externalemail;
+    
+        insert record;
+    
+        // Fetch Name after insert
+        record = [SELECT Id, Name FROM Toilet_Inventory__c WHERE Id = :record.Id];
+    
+        return new ToiletInventoryResult(record.Id, record.Name);
+    }
+
+
+    @AuraEnabled(cacheable=true)
+    public static Map<String, List<String>> getToiletPicklistValues() {
+        Map<String, List<String>> result = new Map<String, List<String>>();
+
+        // Get values for Entered_By__c
+        List<String> enteredBy = new List<String>();
+        for (Schema.PicklistEntry entry : Toilet_Inventory__c.Entered_By__c.getDescribe().getPicklistValues()) {
+            if (entry.isActive()) enteredBy.add(entry.getLabel());
+        }
+        result.put('Entered_By__c', enteredBy);
+
+        // Get values for Status_T__c
+        List<String> statusT = new List<String>();
+        for (Schema.PicklistEntry entry : Toilet_Inventory__c.Status_T__c.getDescribe().getPicklistValues()) {
+            if (entry.isActive()) statusT.add(entry.getLabel());
+        }
+        result.put('Status_T__c', statusT);
+
+        return result;
+    }
+       
+    
+ //==================================================== Waste Disposal ========================================================================================//
+ 
+    @AuraEnabled(cacheable=true)
+    public static List<RecordType> getWasteDisposalRecordTypes() {
+        return [SELECT Id, Name FROM RecordType WHERE SObjectType = 'Waste_Disposal__c'];
+    }
+
+    @AuraEnabled(cacheable=true)
+    public static Map<String, List<String>> getPicklistValues() {
+        Map<String, List<String>> picklists = new Map<String, List<String>>();
+        
+        picklists.put('Bin_Size__c', getValues('Waste_Disposal__c', 'Bin_Size__c'));
+        picklists.put('Commodity__c', getValues('Waste_Disposal__c', 'Commodity__c'));
+        picklists.put('Job_Description__c', getValues('Waste_Disposal__c', 'Job_Description__c'));
+
+        return picklists;
+    }
+
+    private static List<String> getValues(String objectName, String fieldName) {
+        List<String> values = new List<String>();
+        Schema.DescribeFieldResult fieldResult = Schema.getGlobalDescribe().get(objectName).getDescribe().fields.getMap().get(fieldName).getDescribe();
+        for (Schema.PicklistEntry entry : fieldResult.getPicklistValues()) {
+            values.add(entry.getLabel());
+        }
+        return values;
+    }
+    
+    public class WasteDisposalResult {
+        @AuraEnabled public Id recordId;
+        @AuraEnabled public String workOrderNumber;
+    
+        public WasteDisposalResult(Id recordId, String workOrderNumber) {
+            this.recordId = recordId;
+            this.workOrderNumber = workOrderNumber;
+        }
+    }
+
+
+   @AuraEnabled
+    public static WasteDisposalResult createWasteDisposal(Map<String, Object> wasteData) {
+        Waste_Disposal__c waste = new Waste_Disposal__c();
+        waste.Appointment_Window__c = (String)wasteData.get('appointmentWindow');
+        
+        String dateStr = (String)wasteData.get('serviceDateWaste');
+        if (dateStr != null) {
+            waste.Service_Req_on__c = Date.valueOf(dateStr);
+        }
+        
+        waste.Job_Description__c = (String)wasteData.get('jobDescription');
+        waste.Bin_Size__c = (String)wasteData.get('binSize');
+        waste.Commodity__c = (String)wasteData.get('commodity');
+        waste.Project__c = (Id)wasteData.get('projectWaste');
+        waste.Ordered_By__c = (String)wasteData.get('orderedByWaste');
+        waste.Access_Contact__c = (String)wasteData.get('accessContactWaste');
+        waste.Site_Access_Information__c = (String)wasteData.get('siteAccessInformationWaste');
+        waste.Installation_Instructions__c = (String)wasteData.get('installationInstructions');
+        waste.APP_Order_status__c = (String)wasteData.get('APPOrderstatus');
+        waste.External_User__c = (String)wasteData.get('Externalemail');
+    
+        insert waste;
+    
+        // Fetch Name field after insert
+        waste = [SELECT Id, Name FROM Waste_Disposal__c WHERE Id = :waste.Id];
+    
+        return new WasteDisposalResult(waste.Id, waste.Name);
+    }
+    
+    //--------------------------------------------------------------------get contacts----------------------------------
+        
+       @AuraEnabled
+    public static List<Contact> getContactsForProject(Id projectId) {
+        // Validate input
+        if (projectId == null) {
+            throw new AuraHandledException('Project Id is required.');
+        }
+    
+        // Fetch the related Account (General Contractor) from Project
+        Projects__c proj = [
+            SELECT General_Contractor__c 
+            FROM Projects__c 
+            WHERE Id = :projectId 
+            LIMIT 1
+        ];
+    
+        if (proj.General_Contractor__c == null) {
+            return new List<Contact>(); // No contractor set on the project
+        }
+    
+        // Fetch contacts related to that Account
+        return [
+            SELECT Id, Name ,MobilePhone,Phone
+            FROM Contact 
+            WHERE AccountId = :proj.General_Contractor__c
+        ];
+    }
+    
+    
+     @AuraEnabled
+    public static Contact createContact(Contact con, Id projectId) {
+        Id accountId = [
+            SELECT General_Contractor__c 
+            FROM Projects__c 
+            WHERE Id = :projectId 
+            LIMIT 1
+        ].General_Contractor__c;
+        
+        con.AccountId = accountId;
+        insert con;
+        return con;
+    }
+	
+    @AuraEnabled(cacheable=true)
+    public static List<Account> getAllAccounts() {
+        return [SELECT Id, Name FROM Account ORDER BY Name];
+    }
+    
+    @AuraEnabled(cacheable=true)
+    public static List<Projects__c> getProjectsByAccountfront(Id accountId) {
+        return [
+            SELECT Id, Name 
+            FROM Projects__c 
+            WHERE General_Contractor__c = :accountId
+            ORDER BY Name
+        ];
+    }
+    
+
+}
